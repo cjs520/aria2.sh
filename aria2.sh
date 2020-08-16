@@ -9,10 +9,10 @@
 # https://github.com/P3TERX/aria2.sh
 # Description: Aria2 One-click installation management script
 # System Required: CentOS/Debian/Ubuntu
-# Version: 2.6.0
+# Version: 2.7.0
 #
 
-sh_ver="2.6.0"
+sh_ver="2.7.0"
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 aria2_conf_dir="/root/.aria2c"
@@ -128,7 +128,7 @@ Download_aria2() {
 Download_aria2_conf() {
     PROFILE_URL1="https://p3terx.github.io/aria2.conf"
     PROFILE_URL2="https://aria2c.now.sh"
-    PROFILE_URL3="https://gh.p3terx.workers.dev/aria2.conf/master"
+    PROFILE_URL3="https://cdn.jsdelivr.net/gh/P3TERX/aria2.conf@master"
     PROFILE_LIST="
 aria2.conf
 clean.sh
@@ -166,8 +166,8 @@ LICENSE
 Service_aria2() {
     if [[ ${release} = "centos" ]]; then
         wget -N -t2 -T3 "https://raw.githubusercontent.com/P3TERX/aria2.sh/master/service/aria2_centos" -O /etc/init.d/aria2 ||
-            wget -N -t2 -T3 "https://cdn.jsdelivr.net/gh/P3TERX/aria2.sh/service/aria2_centos" -O /etc/init.d/aria2 ||
-            wget -N -t2 -T3 "https://gh.p3terx.workers.dev/aria2.sh/master/service/aria2_centos" -O /etc/init.d/aria2
+            wget -N -t2 -T3 "https://cdn.jsdelivr.net/gh/P3TERX/aria2.sh@master/service/aria2_centos" -O /etc/init.d/aria2 ||
+            wget -N -t2 -T3 "https://gh-raw.p3terx.com/P3TERX/aria2.sh/master/service/aria2_centos" -O /etc/init.d/aria2
         [[ ! -s /etc/init.d/aria2 ]] && {
             echo -e "${Error} Aria2服务 管理脚本下载失败 !"
             exit 1
@@ -177,8 +177,8 @@ Service_aria2() {
         chkconfig aria2 on
     else
         wget -N -t2 -T3 "https://raw.githubusercontent.com/P3TERX/aria2.sh/master/service/aria2_debian" -O /etc/init.d/aria2 ||
-            wget -N -t2 -T3 "https://cdn.jsdelivr.net/gh/P3TERX/aria2.sh/service/aria2_debian" -O /etc/init.d/aria2 ||
-            wget -N -t2 -T3 "https://gh.p3terx.workers.dev/aria2.sh/master/service/aria2_debian" -O /etc/init.d/aria2
+            wget -N -t2 -T3 "https://cdn.jsdelivr.net/gh/P3TERX/aria2.sh@master/service/aria2_debian" -O /etc/init.d/aria2 ||
+            wget -N -t2 -T3 "https://gh-raw.p3terx.com/P3TERX/aria2.sh/master/service/aria2_debian" -O /etc/init.d/aria2
         [[ ! -s /etc/init.d/aria2 ]] && {
             echo -e "${Error} Aria2服务 管理脚本下载失败 !"
             exit 1
@@ -489,27 +489,34 @@ View_Aria2() {
     check_installed_status
     Read_config
     IPV4=$(
-        wget -qO- -t1 -T2 -4 ip.sb ||
-            wget -qO- -t1 -T2 -4 ifconfig.io ||
+        wget -qO- -t1 -T2 -4 api.ip.sb/ip ||
+            wget -qO- -t1 -T2 -4 ifconfig.io/ip ||
             wget -qO- -t1 -T2 -4 www.trackip.net/ip
     )
-    [[ -z "${IPV4}" ]] && IPV4="IPv4 地址检测失败"
     IPV6=$(
-        wget -qO- -t1 -T2 -6 ip.sb ||
-            wget -qO- -t1 -T2 -6 ifconfig.io ||
+        wget -qO- -t1 -T2 -6 api.ip.sb/ip ||
+            wget -qO- -t1 -T2 -6 ifconfig.io/ip ||
             wget -qO- -t1 -T2 -6 www.trackip.net/ip
     )
+    [[ -z "${IPV4}" ]] && IPV4="IPv4 地址检测失败"
     [[ -z "${IPV6}" ]] && IPV6="IPv6 地址检测失败"
     [[ -z "${aria2_dir}" ]] && aria2_dir="找不到配置参数"
     [[ -z "${aria2_port}" ]] && aria2_port="找不到配置参数"
     [[ -z "${aria2_passwd}" ]] && aria2_passwd="找不到配置参数(或无密钥)"
+    if [[ -z "${IPV4}" || -z "${aria2_port}" ]]; then
+        AriaNg_URL="null"
+    else
+        AriaNg_API="/#!/settings/rpc/set/ws/${IPV4}/${aria2_port}/jsonrpc/$(echo -n ${aria2_passwd} | base64)"
+        AriaNg_URL="http://ariang.js.org${AriaNg_API}"
+    fi
     clear
     echo -e "\nAria2 简单配置信息：\n
  IPv4 地址\t: ${Green_font_prefix}${IPV4}${Font_color_suffix}
  IPv6 地址\t: ${Green_font_prefix}${IPV6}${Font_color_suffix}
  RPC 端口\t: ${Green_font_prefix}${aria2_port}${Font_color_suffix}
  RPC 密钥\t: ${Green_font_prefix}${aria2_passwd}${Font_color_suffix}
- 下载目录\t: ${Green_font_prefix}${aria2_dir}${Font_color_suffix}\n"
+ 下载目录\t: ${Green_font_prefix}${aria2_dir}${Font_color_suffix}
+ AriaNg 链接\t: ${Green_font_prefix}${AriaNg_URL}${Font_color_suffix}\n"
 }
 View_Log() {
     [[ ! -e ${aria2_log} ]] && echo -e "${Error} Aria2 日志文件不存在 !" && exit 1
